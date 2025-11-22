@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NerveSurf25</title>
+  <style>
+       @import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Poppins:wght@600&display=swap');
+       @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      padding: 20px;
+    }
+    h1 {
+      font-family: 'Fredoka One', cursive;
+      font-size: 4em;
+      background: linear-gradient(90deg, #ff8a00, #da1b60);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      margin: 20px 0 10px;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { filter: brightness(1) drop-shadow(0 0 10px #ff8a00); }
+      to { filter: brightness(1.3) drop-shadow(0 0 20px #da1b60); }
+    }
+    .subtitle {
+      color: #fff;
+      font-size: 1.4em;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      margin-bottom: 15px;
+      opacity: 0.9;
+    }
+    canvas {
+      border-radius: 24px;
+      box-shadow: 
+        0 20px 40px rgba(0,0,0,0.6),
+        0 0 30px rgba(255, 140, 0, 0.3),
+        inset 0 0 30px rgba(255,255,255,0.1);
+      max-width: 100%;
+      image-rendering: pixelated; /* Keeps retro feel but crisp */
+    }
+    .container {
+      position: relative;
+      border-radius: 28px;
+      padding: 15px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.3));
+      backdrop-filter: blur(10px);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    }
+    .instructions {
+      margin-top: 20px;
+      color: #a0e7ff;
+      font-size: 1.3em;
+      text-shadow: 0 2px 8px #000;
+      background: rgba(0,0,0,0.4);
+      padding: 12px 30px;
+      border-radius: 50px;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(30,0,50,0.95));
+      padding: 50px 80px;
+      border-radius: 30px;
+      text-align: center;
+      font-size: 3em;
+      color: white;
+      display: none;
+      z-index: 100;
+      border: 4px solid #ff3366;
+      box-shadow: 0 0 60px rgba(255, 51, 102, 0.8);
+      animation: pulse 1.5s infinite;
+    }
+    .game-over.show { display: block; }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 60px rgba(255, 51, 102, 0.8); }
+      50% { box-shadow: 0 0 90px rgba(255, 51, 102, 1); }
+      100% { box-shadow: 0 0 60px rgba(255, 51, 102, 0.8); }
+    }
+    .game-over small {
+      display: block;
+      font-size: 0.4em;
+      margin-top: 20px;
+      color: #ff99bb;
+      font-family: 'Poppins', sans-serif;
+    }
+    .score-display {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 0 3px 10px #000;
+      z-index: 10;
+      background: rgba(0,0,0,0.4);
+      padding: 10px 20px;
+      border-radius: 15px;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    .coin-display {
+      position: absolute;
+      top: 80px;
+      left: 20px;
+      color: #FFD700;
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 0 3px 10px #000;
+      z-index: 10;
+      background: rgba(0,0,0,0.4);
+      padding: 10px 20px;
+      border-radius: 15px;
+      border: 2px solid #FFD700;
+    }
+    .splash-screen {
+      text-align: center;
+      margin-top: 30px;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .splash-screen h1 {
+      font-size: 48px;
+      margin-bottom: 50px;
+      letter-spacing: 1px;
+    }
+
+    .splash-screen h2 {
+      font-size: 24px;
+      opacity: 0.85;
+      font-weight: 400;
+
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .screen h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3em;
+    margin-bottom: 40px;
+    text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+  }
+  /* Waving animation after 5s delay */
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(15deg); }
+  50% { transform: rotate(-15deg); }
+  75% { transform: rotate(10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+#wavingPlayer.wave {
+  opacity: 1;
+  animation: wave 1s infinite ease-in-out;
+}
+
+#wavingPlayer.wave ~ #playerShadow {
+  animation: shadowBounce 1s infinite ease-in-out;
+}
+
+@keyframes shadowBounce {
+  0%,100% { transform: scaleX(1); }
+  50% { transform: scaleX(1.1); }
+}
+#asciiShadow {
+  animation: shadowBounce 1s infinite ease-in-out;
+}
+
+@keyframes shadowBounce {
+  0%, 100% { transform: scaleX(1) translateY(0); }
+  50% { transform: scaleX(1.2) translateY(-3px); }
+}
+
+  </style>
+</head>
+<body>
+  <div id="splash" class="splash-screen">
+  <h1>Welcome to NerveSurf25</h1>
+  <h2>Nerve, Surf, & Enjoy!</h2>
+</div>
+
+<div id="selection" class="screen" style="display:none; text-align:center;">
+  <h1>Please select Your</h1>
+  
+  <div style="margin:20px;">
+    <label for="ageInput" style="font-size:1.5em; color:white;">Age:</label>
+    <input id="ageInput" type="number" min="1" max="120" placeholder="Enter your age" style="font-size:1.2em; padding:10px; border-radius:10px; border:none; margin-left:20px; width:250px;">
+  </div>
+
+  <div style="margin:20px;">
+    <label for="genderInput" style="font-size:1.5em; color:white;">Gender:</label>
+    <select id="genderInput" style="font-size:1.2em; padding:10px; border-radius:10px; border:none; margin-left:10px;">
+      <option value="" disabled selected>Select your gender</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+    </select>
+  </div>
+  <button id="startGame" style="font-size:1.5em; padding:15px 40px; margin-top:30px; border-radius:15px; border:none; cursor:pointer; background:#267691; color:white;">Start Game</button>
+</div>
+
+<div id="screen3" class="screen" style="display:none; position:relative; width:100%; height:100vh; padding:50px; box-sizing:border-box;">
+  <!-- LEFT SIDE -->
+  <div class="left-side" style="position:absolute; left:50px; top:50px; display:flex; flex-direction:column; gap:40px;">
+    <!-- Sound Icon -->
+    <div id="soundBtn" style="font-size:2em; cursor:pointer;">🔊</div>
+    <!-- Target Icon -->
+    <div id="targetBtn" style="font-size:2em; cursor:pointer;">📋</div>
+    <!-- ASCII Player with Shadow (line-by-line) -->
+<div id="asciiPlayerContainer" style="position: relative; width: 120px; height: 220px;">
+  <!-- Shadow -->
+  <div id="asciiShadow" style="
+       position: absolute; 
+       top: 0; 
+       width: 100%; 
+       text-align: center; 
+       color: rgba(0,0,0,0.5); 
+       font-size: 20px;">
+    ⚫
+  </div>
+
+  <!-- Player body as sequence -->
+  <div id="asciiPlayer" style="
+       position: absolute; 
+       bottom: 20px; 
+       width: 100%; 
+       font-size: 16px; 
+       line-height: 14px; 
+       color: #0066FF; 
+       display: flex; 
+       flex-direction: column; 
+       align-items: center;">
+    <div>_-----_</div>
+    <div>|   |   |</div>
+    <div>|   |   |</div>
+    <div>^   |   ^</div>
+    <div>__--__</div>
+    <div>|        |</div>
+    <div>|        |</div>
+    <div>|        |</div>
+    <div>^       ^</div>
+  </div>
+</div>
+    <!-- Waving Player -->
+    <div style="position:relative; width:100px; height:200px;">
+      <div id="playerShadow" style="position:absolute; bottom:0; width:100px; height:30px; background:rgba(0,0,0,0.3); border-radius:50%;"></div>
+      <div id="wavingPlayer" style="position:absolute; bottom:30px; width:100px; height:170px; background:#0066FF; border-radius:20px; opacity:0;"></div>
+    </div>
+  </div>
+  <!-- RIGHT SIDE -->
+  <div class="right-side" style="position:absolute; right:50px; top:50px; display:flex; flex-direction:column; gap:40px; align-items:flex-end;">
+    <!-- Coin Display -->
+    <div id="coinDisplay" style="font-size:1.8em; background:rgba(255,255,255,0.2); padding:10px 30px; border-radius:50px; cursor:pointer; transition:0.3s;">★ 0</div>
+    <!-- Reset Button -->
+    <button id="resetCoin" style="font-size:1.5em; padding:10px 25px; border-radius:15px; border:none; cursor:pointer; background:#ff3366; color:white;">Reset Coin</button>
+    <!-- Tap Text -->
+    <div id="tapText" style="rotate(-45deg); font-size:2em; color:white; text-shadow:0 2px 10px rgba(0,0,0,0.5); cursor:pointer;">
+  Tap to Nerve & Surf
+</div>
+  </div>
+</div>
+
+  <div id="gameUI" style="display:none;">
+  <h1>NerveSurf25</h1>
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <div class="instructions">Press SPACE, CLICK or TAP to jump • Avoid carts, hay & chickens!</div>
+</div>
+
+  <div id="gameOver" class="game-over">
+    <div>GAME OVER</div>
+    <div style="font-size: 0.5em; margin-top: 20px;">Click or press R to restart</div>
+  </div>
+
+  <script>
+const splash = document.getElementById("splash");
+const selection = document.getElementById("selection");
+const gameUI = document.getElementById("gameUI");
+const age = document.getElementById('ageInput');
+const gender = document.getElementById('genderInput');
+const startBtn = document.getElementById("startGame");
+
+// 1. Splash → Selection after 3s
+setTimeout(() => {
+  splash.style.display = "none";
+  selection.style.display = "block";
+}, 2000);
+
+// 2. Selection → Game on button click
+startBtn.addEventListener("click", () => {
+  const ageValue = age.value;
+  const genderValue = gender.value;
+
+  if (!ageValue || !genderValue) {
+    alert("Please enter your age and select your gender!");
+    return;
+  }
+
+  console.log("User Age:", ageValue);
+  console.log("User Gender:", genderValue);
+
+  // Hide selection, show screen3
+  selection.style.display = "none";
+  screen3.style.display = "block";
+
+  // Optional: Wait a few seconds or let user click something to start game
+  // For example, clicking "Tap to Nerve & Surf" starts the game
+  const tapText = screen3.querySelector('div[style*="rotate(45deg)"]');
+  tapText.addEventListener('click', () => {
+    screen3.style.display = "none";
+    gameUI.style.display = "block";
+    gameLoop();
+  });
+});
+// Elements
+const screen3 = document.getElementById('screen3');
+const soundBtn = document.getElementById('soundBtn');
+const targetBtn = document.getElementById('targetBtn');
+const wavingPlayer = document.getElementById('wavingPlayer');
+const coinDisplay = document.getElementById('coinDisplay');
+const resetCoin = document.getElementById('resetCoin');
+
+let bgMusic = new Audio('surf-a-wave-327974.mp3');
+bgMusic.loop = true;
+let musicPlaying = false;
+
+// Sound toggle
+soundBtn.addEventListener('click', () => {
+  if (musicPlaying) {
+    bgMusic.pause();
+    soundBtn.textContent = '🔇';
+  } else {
+    bgMusic.play();
+    soundBtn.textContent = '🔊';
+  }
+  musicPlaying = !musicPlaying;
+});
+
+// Random target (example)
+targetBtn.addEventListener('click', () => {
+  const targets = ['Collect 50 coins', 'Jump 20 times', 'Avoid 10 obstacles'];
+  alert("Today's target: " + targets[Math.floor(Math.random() * targets.length)]);
+});
+
+// Show waving player after 5s
+setTimeout(() => {
+  wavingPlayer.classList.add('wave');
+}, 5000);
+
+// Coin display hover effect
+coinDisplay.addEventListener('mouseenter', () => coinDisplay.style.transform = 'scale(1.1)');
+coinDisplay.addEventListener('mouseleave', () => coinDisplay.style.transform = 'scale(1)');
+
+// Reset coin button
+resetCoin.addEventListener('click', () => {
+  localStorage.setItem('coins', 0);
+  coinDisplay.textContent = '★ 0';
+});
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = 800;
+    canvas.height = 400;
+
+    const gameOverScreen = document.getElementById("gameOver");
+    // --- Player Image ---
+    const playerImg = new Image();
+    playerImg.src = "/mnt/data/Black and White Modern Personal Brand Logo.png";
+
+    // Game variables
+    let speed = 5;
+    let score = 0;
+    let coins = 0;
+    let gameRunning = true;
+
+    // Player
+   const player = { x: 150, 
+   y: canvas.height - 150, 
+   width: 50, height: 80, 
+   velY: 0,
+   jumping: false };
+
+
+    const gravity = 0.9;
+    const jumpPower = -16;
+
+    const obstacles = [];
+    const coinList = [];
+    let spawnTimer = 0;
+
+    // Input handling
+    const keys = {};
+    window.addEventListener("keydown", e => {
+      keys[e.code] = true;
+      if ((e.code === "Space" || e.code === "ArrowUp") && !player.jumping && gameRunning) {
+        player.velY = jumpPower;
+        player.jumping = true;
+        e.preventDefault();
+      }
+      if (e.code === "KeyR" && !gameRunning) restart();
+    });
+    window.addEventListener("keyup", e => keys[e.code] = false);
+
+    canvas.addEventListener("click", () => {
+      if (!player.jumping && gameRunning) {
+        player.velY = jumpPower;
+        player.jumping = true;
+      }
+      if (!gameRunning) restart();
+    });
+
+    // Classes
+    class Obstacle {
+      constructor(x, type) {
+        this.x = x;
+        this.type = type; // 0=hay, 1=cart, 2=chicken
+        this.width = type === 2 ? 50 : 80;
+        this.height = type === 2 ? 40 : 70;
+      }
+      update() { this.x -= speed; }
+      draw() {
+        ctx.fillStyle = this.type === 0 ? "#8B4513" : this.type === 1 ? "#A0522D" : "#FFD700";
+        ctx.fillRect(this.x, canvas.height - 100 - this.height, this.width, this.height);
+        if (this.type === 2) { // chicken eye
+          ctx.fillStyle = "white";
+          ctx.beginPath();
+          ctx.arc(this.x + 15, canvas.height - 100 - 25, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      collide() {
+        return player.x + player.width > this.x &&
+               player.x < this.x + this.width &&
+               player.y + player.height > canvas.height - 100 - this.height &&
+               player.y < canvas.height - 100;
+      }
+    }
+
+    class Coin {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.collected = false;
+      }
+      update() { this.x -= speed; }
+      draw() {
+        if (this.collected) return;
+        ctx.fillStyle = "#FFD700";
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      }
+      collect() {
+        if (this.collected) return false;
+        const dx = player.x + player.width/2 - this.x;
+        const dy = player.y + player.height/2 - this.y;
+        if (Math.hypot(dx, dy) < 50) {
+          this.collected = true;
+          coins++;
+          score += 10;
+          return true;
+        }
+        return false;
+      }
+    }
+
+    function spawnObjects() {
+      spawnTimer++;
+      if (spawnTimer > 80 + Math.random() * 80) {
+        spawnTimer = 0;
+        const type = Math.floor(Math.random() * 3);
+        obstacles.push(new Obstacle(canvas.width + 50, type));
+        if (Math.random() > 0.5) {
+          const coinY = canvas.height - 200 + Math.random() * 100 - 50;
+          coinList.push(new Coin(canvas.width + 100, coinY));
+        }
+      }
+    }
+
+    function restart() {
+  // Reset player
+  player.y = canvas.height - 150;
+  player.velY = 0;
+  player.jumping = false;
+
+  // Clear obstacles & coins
+  obstacles.length = 0;
+  coinList.length = 0;
+
+  // Reset game variables
+  speed = 5;
+  score = 0;
+  coins = 0;
+
+  // Hide game over screen
+  gameOverScreen.classList.remove("show");
+
+  // Restart game loop
+  if (!gameRunning) {
+    gameRunning = true;
+    requestAnimationFrame(gameLoop);
+  } else {
+    // If gameRunning is already true, force loop anyway
+    gameLoop();
+  }
+}
+
+    function gameLoop() {
+      if (!gameRunning) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Sky
+      ctx.fillStyle = "#87CEEB";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Grass & Road
+      ctx.fillStyle = "#228B22";
+      ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+      ctx.fillStyle = "#555";
+      ctx.fillRect(100, canvas.height - 100, canvas.width - 200, 100);
+
+      // Moving road lines
+      for (let i = -2; i < 5; i++) {
+        let x = (i * 200 + Date.now() / 10) % (canvas.width + 200);
+        ctx.fillStyle = "white";
+        ctx.fillRect(x - 100, canvas.height - 55, 80, 10);
+      }
+
+      // Background village houses
+      for (let i = 0; i < 3; i++) {
+        const offset = Date.now() / 30 % 800;
+        const houseX = (i * 400 - offset) % 1200 - 200;
+        ctx.fillStyle = "#CD5C5C";
+        ctx.fillRect(houseX, canvas.height - 220, 160, 120);
+        ctx.fillStyle = "#8B0000";
+        ctx.beginPath();
+        ctx.moveTo(houseX, canvas.height - 220);
+        ctx.lineTo(houseX + 80, canvas.height - 280);
+        ctx.lineTo(houseX + 160, canvas.height - 220);
+        ctx.closePath();
+        ctx.fill();
+      }
+// --- Player physics ---
+player.velY += gravity;
+player.y += player.velY;
+if (player.y >= canvas.height - 150) {
+  player.y = canvas.height - 150;
+  player.velY = 0;
+  player.jumping = false;
+}
+
+// --- Body bouncing ---
+const bounceHeight = 5; // how much the player bounces
+const bounceSpeed = 0.005; // speed of bounce
+const bodyBounce = Math.sin(Date.now() * bounceSpeed) * bounceHeight;
+
+// --- Draw shadow ---
+const shadowScale = 1 - (canvas.height - 150 - player.y - bodyBounce) / 200;
+ctx.save();
+ctx.translate(player.x + player.width/2, canvas.height - 20);
+ctx.scale(shadowScale, 1);
+ctx.beginPath();
+ctx.ellipse(0, 0, player.width/2, 10, 0, 0, Math.PI*2);
+ctx.fillStyle = "rgba(0,0,0,0.4)";
+ctx.fill();
+ctx.restore();
+
+// --- Draw player as PNG image ---
+ctx.drawImage(
+  playerImg,
+  player.x,
+  player.y + bodyBounce,
+  player.width,
+  player.height
+);
+
+// Running legs
+const legSwing = Math.abs((Date.now() / 80) % 20 - 10);
+ctx.strokeStyle = "black";
+ctx.lineWidth = 6;
+ctx.beginPath();
+ctx.moveTo(player.x + 20, player.y + player.height + bodyBounce);
+ctx.lineTo(player.x + 10 + legSwing, player.y + player.height + 25 + bodyBounce);
+ctx.moveTo(player.x + 40, player.y + player.height + bodyBounce);
+ctx.lineTo(player.x + 50 - legSwing, player.y + player.height + 25 + bodyBounce);
+ctx.stroke();
+      // Coins
+      for (let i = coinList.length - 1; i >= 0; i--) {
+        coinList[i].update();
+        coinList[i].draw();
+        coinList[i].collect();
+        if (coinList[i].x < -100) coinList.splice(i, 1);
+      }
+
+      // Obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].update();
+        obstacles[i].draw();
+        if (obstacles[i].collide()) {
+          gameRunning = false;
+          gameOverScreen.classList.add("show");
+        }
+        if (obstacles[i].x < -200) {
+          obstacles.splice(i, 1);
+          score += 50;
+        }
+      }
+
+      // Scoring & difficulty
+      score += 1;
+      if (score % 5000 === 0) speed += 0.5;
+
+      // HUD
+      ctx.fillStyle = "white";
+      ctx.font = "30px Arial";
+      ctx.fillText(`Score: ${Math.floor(score / 10)}`, 20, 50);
+      ctx.fillStyle = "#FFD700";
+      ctx.fillText(`★ ${coins}`, 20, 90);
+
+      requestAnimationFrame(gameLoop);
+    }
+  </script>
+</body>
+</html>
