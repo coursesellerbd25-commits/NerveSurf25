@@ -163,6 +163,15 @@
 #wavingPlayer.wave {
   animation: wave 1s infinite ease-in-out;
 }
+@keyframes floatMove {
+  0% { transform: translate(-50%, 0) translateX(0); }
+  50% { transform: translate(-50%, -10px) translateX(30px); }
+  100% { transform: translate(-50%, 0) translateX(0); }
+}
+
+#wavingPlayer.float {
+  animation: floatMove 1.5s infinite ease-in-out;
+}
 
   </style>
 </head>
@@ -228,7 +237,7 @@
   <div id="gameUI" style="display:none;">
   <h1>NerveSurf25</h1>
   <canvas id="gameCanvas" width="800" height="400"></canvas>
-  <div class="instructions">Press SPACE, CLICK or TAP to jump • Avoid carts, hay & chickens!</div>
+  <div class="instructions">• Run, avoid & overcome!</div>
 </div>
 
   <div id="gameOver" class="game-over">
@@ -274,7 +283,8 @@ startBtn.addEventListener("click", () => {
   tapText.addEventListener('click', () => {
     screen3.style.display = "none";
     gameUI.style.display = "block";
-    gameLoop();
+  requestAnimationFrame(gameLoop);
+
   });
 });
 // Elements
@@ -309,9 +319,10 @@ targetBtn.addEventListener('click', () => {
 //waving player animation
 const wavingPlayer = document.getElementById('wavingPlayer');
 
-setTimeout(() => {
-  wavingPlayer.classList.add('wave');
-}, 5000);
+wavingPlayer.classList.add('float');
+document.addEventListener('mousemove', (e) => {
+  wavingPlayer.style.left = e.clientX + "px";
+});
 
 // Coin display hover effect
 coinDisplay.addEventListener('mouseenter', () => coinDisplay.style.transform = 'scale(1.1)');
@@ -330,9 +341,75 @@ resetCoin.addEventListener('click', () => {
 
     const gameOverScreen = document.getElementById("gameOver");
 
-    // --- Preload PNG (transparent background) ---
-const playerImg = new Image();
-playerImg.src = "Black_and_White_Modern_Personal_Brand_Logo-removebg-preview.png";
+    // --- GAME IMAGE ASSETS ---
+const images = {
+  wave1: new Image(),
+  wave2: new Image(),
+  float1: new Image(),
+  float2: new Image(),
+  rightGlance: new Image(),
+  leftGlance: new Image(),
+
+  run1: new Image(),
+  run2: new Image(),
+  jumpHandWave: new Image(),
+  slip1: new Image(),
+  slip2: new Image(),
+
+  coin: new Image(),
+  shadow: new Image(),
+
+  flySky1: new Image(),
+  flySky2: new Image(),
+
+  runTilt1: new Image(),
+  runTilt2: new Image(),
+
+  slip1Tilt1: new Image(),
+  slip1Tilt2: new Image(),
+  slip2Tilt1: new Image(),
+  slip2Tilt2: new Image(),
+
+  flySkyTilt1: new Image(),
+  flySkyTilt2: new Image(),
+
+  road: new Image(),
+  mysteryBox: new Image()
+};
+
+// --- SET IMAGE SOURCES ---
+images.wave1.src = "Wave1.png";
+images.wave2.src = "Wave2.png";
+images.float1.src = "Float1.png";
+images.float2.src = "Float2.png";
+images.rightGlance.src = "rightGlance.png";
+images.leftGlance.src = "leftGlance.png";
+
+images.run1.src = "run1.png";
+images.run2.src = "run2.png";
+images.jumpHandWave.src = "jump hand wave.png";
+images.slip1.src = "slip1.png";
+images.slip2.src = "slip2.png";
+
+images.coin.src = "coin.png";
+images.shadow.src = "shadow.png";
+
+images.flySky1.src = "fly-sky1.png";
+images.flySky2.src = "fly-sky2.png";
+
+images.runTilt1.src = "runTilt1.png";
+images.runTilt2.src = "runTilt2.png";
+
+images.slip1Tilt1.src = "slip1Tilt1.png";
+images.slip1Tilt2.src = "slip1Tilt2.png";
+images.slip2Tilt1.src = "slip2Tilt1.png";
+images.slip2Tilt2.src = "slip2Tilt2.png";
+
+images.flySkyTilt1.src = "fly-skyTilt1.png";
+images.flySkyTilt2.src = "fly-skyTilt2.png";
+
+images.road.src = "road.png";
+images.mysteryBox.src = "mystery box.png";
 
 
     // Game variables
@@ -387,15 +464,20 @@ playerImg.src = "Black_and_White_Modern_Personal_Brand_Logo-removebg-preview.png
       }
       update() { this.x -= speed; }
       draw() {
-        ctx.fillStyle = this.type === 0 ? "#8B4513" : this.type === 1 ? "#A0522D" : "#FFD700";
-        ctx.fillRect(this.x, canvas.height - 100 - this.height, this.width, this.height);
-        if (this.type === 2) { // chicken eye
-          ctx.fillStyle = "white";
-          ctx.beginPath();
-          ctx.arc(this.x + 15, canvas.height - 100 - 25, 6, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+  const obstacleImages = {
+    0: "❌",
+    1: "🚘",
+    2: "✈"
+  };
+
+  ctx.font = "50px Arial";
+  ctx.fillText(
+    obstacleImages[this.type],
+    this.x,
+    canvas.height - 100 - this.height
+  );
+}
+
       collide() {
         return player.x + player.width > this.x &&
                player.x < this.x + this.width &&
@@ -412,15 +494,17 @@ playerImg.src = "Black_and_White_Modern_Personal_Brand_Logo-removebg-preview.png
       }
       update() { this.x -= speed; }
       draw() {
-        if (this.collected) return;
-        ctx.fillStyle = "#FFD700";
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 4;
-        ctx.stroke();
-      }
+  if (this.collected) return;
+
+  ctx.drawImage(
+    images.coin,
+    this.x - 18,
+    this.y - 18,
+    36,
+    36
+  );
+}
+
       collect() {
         if (this.collected) return false;
         const dx = player.x + player.width/2 - this.x;
@@ -477,117 +561,78 @@ playerImg.src = "Black_and_White_Modern_Personal_Brand_Logo-removebg-preview.png
 }
 
     function gameLoop() {
-      // --- Shadow under player (must be drawn BEFORE the PNG) ---
-let groundY = canvas.height - 15;
-let shadowWidth = 30 + (player.y - (canvas.height - 150)) * -0.3;
+  if (!gameRunning) return;
 
-ctx.beginPath();
-ctx.ellipse(
-  player.x + player.width / 2,
-  groundY,
-  shadowWidth,
-  10,
-  0,
-  0,
-  Math.PI * 2
-);
-ctx.fillStyle = "rgba(0,0,0,0.6)";
-ctx.fill();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (!gameRunning) return;
+  // Sky
+  ctx.fillStyle = "#87CEEB";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Sky
-      ctx.fillStyle = "#87CEEB";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Ground
+  ctx.fillStyle = "#228B22";
+  ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
 
-      // Grass & Road
-      ctx.fillStyle = "#228B22";
-      ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
-      ctx.fillStyle = "#555";
-      ctx.fillRect(100, canvas.height - 100, canvas.width - 200, 100);
+  // Road PNG
+  ctx.drawImage(images.road, 0, canvas.height - 100, canvas.width, 100);
 
-      // Moving road lines
-      for (let i = -2; i < 5; i++) {
-        let x = (i * 200 + Date.now() / 10) % (canvas.width + 200);
-        ctx.fillStyle = "white";
-        ctx.fillRect(x - 100, canvas.height - 55, 80, 10);
-      }
+  // Player physics
+  player.velY += gravity;
+  player.y += player.velY;
 
-      // Background village houses
-      for (let i = 0; i < 3; i++) {
-        const offset = Date.now() / 30 % 800;
-        const houseX = (i * 400 - offset) % 1200 - 200;
-        ctx.fillStyle = "#CD5C5C";
-        ctx.fillRect(houseX, canvas.height - 220, 160, 120);
-        ctx.fillStyle = "#8B0000";
-        ctx.beginPath();
-        ctx.moveTo(houseX, canvas.height - 220);
-        ctx.lineTo(houseX + 80, canvas.height - 280);
-        ctx.lineTo(houseX + 160, canvas.height - 220);
-        ctx.closePath();
-        ctx.fill();
-      }
-// --- Player physics ---
-player.velY += gravity;
-player.y += player.velY;
-if (player.y >= canvas.height - 150) {
-  player.y = canvas.height - 150;
-  player.velY = 0;
-  player.jumping = false;
+  if (player.y >= canvas.height - 150) {
+    player.y = canvas.height - 150;
+    player.velY = 0;
+    player.jumping = false;
+  }
+
+  // Player animation
+  let frame = Math.floor(Date.now() / 120) % 2;
+  let playerFrame = frame === 0 ? images.run1 : images.run2;
+
+  ctx.drawImage(playerFrame, player.x, player.y, player.width, player.height);
+
+  // Shadow
+  ctx.drawImage(images.shadow, player.x + 10, canvas.height - 35, 60, 20);
+
+  // Coins
+  for (let i = coinList.length - 1; i >= 0; i--) {
+    coinList[i].update();
+    coinList[i].draw();
+    coinList[i].collect();
+    if (coinList[i].x < -100) coinList.splice(i, 1);
+  }
+
+  // Obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    obstacles[i].update();
+    obstacles[i].draw();
+
+    if (obstacles[i].collide()) {
+      gameRunning = false;
+      gameOverScreen.classList.add("show");
+    }
+
+    if (obstacles[i].x < -200) {
+      obstacles.splice(i, 1);
+      score += 50;
+    }
+  }
+
+  spawnObjects();
+
+  // HUD
+  ctx.fillStyle = "white";
+  ctx.font = "30px Arial";
+  ctx.fillText(`Score: ${Math.floor(score / 10)}`, 20, 50);
+
+  ctx.fillStyle = "#FFD700";
+  ctx.fillText(`★ ${coins}`, 20, 90);
+
+  requestAnimationFrame(gameLoop);
 }
 
-// --- Body bouncing ---
-const bounceHeight = 5; // how much the player bounces
-const bounceSpeed = 0.005; // speed of bounce
-const bodyBounce = Math.sin(Date.now() * bounceSpeed) * bounceHeight;
 
-// Running legs
-const legSwing = Math.abs((Date.now() / 80) % 20 - 10);
-ctx.strokeStyle = "black";
-ctx.lineWidth = 6;
-ctx.beginPath();
-ctx.moveTo(player.x + 20, player.y + player.height + bodyBounce);
-ctx.lineTo(player.x + 10 + legSwing, player.y + player.height + 25 + bodyBounce);
-ctx.moveTo(player.x + 40, player.y + player.height + bodyBounce);
-ctx.lineTo(player.x + 50 - legSwing, player.y + player.height + 25 + bodyBounce);
-ctx.stroke();
-      // Coins
-      for (let i = coinList.length - 1; i >= 0; i--) {
-        coinList[i].update();
-        coinList[i].draw();
-        coinList[i].collect();
-        if (coinList[i].x < -100) coinList.splice(i, 1);
-      }
-
-      // Obstacles
-      for (let i = obstacles.length - 1; i >= 0; i--) {
-        obstacles[i].update();
-        obstacles[i].draw();
-        if (obstacles[i].collide()) {
-          gameRunning = false;
-          gameOverScreen.classList.add("show");
-        }
-        if (obstacles[i].x < -200) {
-          obstacles.splice(i, 1);
-          score += 50;
-        }
-      }
-
-      // Scoring & difficulty
-      score += 1;
-      if (score % 5000 === 0) speed += 0.5;
-
-      // HUD
-      ctx.fillStyle = "white";
-      ctx.font = "30px Arial";
-      ctx.fillText(`Score: ${Math.floor(score / 10)}`, 20, 50);
-      ctx.fillStyle = "#FFD700";
-      ctx.fillText(`★ ${coins}`, 20, 90);
-
-      requestAnimationFrame(gameLoop);
-    }
   </script>
 </body>
 </html>
