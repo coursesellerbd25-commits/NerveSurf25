@@ -154,35 +154,14 @@
     margin-bottom: 40px;
     text-shadow: 0 5px 15px rgba(0,0,0,0.5);
   }
-  /* Waving animation after 5s delay */
-@keyframes wave {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(15deg); }
-  50% { transform: rotate(-15deg); }
-  75% { transform: rotate(10deg); }
-  100% { transform: rotate(0deg); }
+ @keyframes wave {
+  0% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+  100% { transform: translateX(-50%) translateY(0); }
 }
 
 #wavingPlayer.wave {
-  opacity: 1;
   animation: wave 1s infinite ease-in-out;
-}
-
-#wavingPlayer.wave ~ #playerShadow {
-  animation: shadowBounce 1s infinite ease-in-out;
-}
-
-@keyframes shadowBounce {
-  0%,100% { transform: scaleX(1); }
-  50% { transform: scaleX(1.1); }
-}
-#asciiShadow {
-  animation: shadowBounce 1s infinite ease-in-out;
-}
-
-@keyframes shadowBounce {
-  0%, 100% { transform: scaleX(1) translateY(0); }
-  50% { transform: scaleX(1.2) translateY(-3px); }
 }
 
   </style>
@@ -219,46 +198,6 @@
     <div id="soundBtn" style="font-size:2em; cursor:pointer;">🔊</div>
     <!-- Target Icon -->
     <div id="targetBtn" style="font-size:2em; cursor:pointer;">📋</div>
-    <!-- ASCII Player with Shadow (line-by-line) -->
-<div id="asciiPlayerContainer" style="position: relative; width: 120px; height: 220px;">
-  <!-- Shadow -->
-  <div id="asciiShadow" style="
-       position: absolute; 
-       top: 0; 
-       width: 100%; 
-       text-align: center; 
-       color: rgba(0,0,0,0.5); 
-       font-size: 20px;">
-    ⚫
-  </div>
-
-  <!-- Player body as sequence -->
-  <div id="asciiPlayer" style="
-       position: absolute; 
-       bottom: 20px; 
-       width: 100%; 
-       font-size: 16px; 
-       line-height: 14px; 
-       color: #0066FF; 
-       display: flex; 
-       flex-direction: column; 
-       align-items: center;">
-    <div>_-----_</div>
-    <div>|   |   |</div>
-    <div>|   |   |</div>
-    <div>^   |   ^</div>
-    <div>__--__</div>
-    <div>|        |</div>
-    <div>|        |</div>
-    <div>|        |</div>
-    <div>^       ^</div>
-  </div>
-</div>
-    <!-- Waving Player -->
-    <div style="position:relative; width:100px; height:200px;">
-      <div id="playerShadow" style="position:absolute; bottom:0; width:100px; height:30px; background:rgba(0,0,0,0.3); border-radius:50%;"></div>
-      <div id="wavingPlayer" style="position:absolute; bottom:30px; width:100px; height:170px; background:#0066FF; border-radius:20px; opacity:0;"></div>
-    </div>
   </div>
   <!-- RIGHT SIDE -->
   <div class="right-side" style="position:absolute; right:50px; top:50px; display:flex; flex-direction:column; gap:40px; align-items:flex-end;">
@@ -271,6 +210,19 @@
   Tap to Nerve & Surf
 </div>
   </div>
+  <!-- Waving Player PNG (Screen 3 only) -->
+<img 
+  id="wavingPlayer"
+  src="Black_and_White_Modern_Personal_Brand_Logo-removebg-preview.png"
+  style="
+    position:absolute;
+    bottom:50px;
+    left:50%;
+    transform:translateX(-50%);
+    width:140px;
+    pointer-events:none;
+  "
+/>
 </div>
 
   <div id="gameUI" style="display:none;">
@@ -317,7 +269,8 @@ startBtn.addEventListener("click", () => {
 
   // Optional: Wait a few seconds or let user click something to start game
   // For example, clicking "Tap to Nerve & Surf" starts the game
-  const tapText = screen3.querySelector('div[style*="rotate(45deg)"]');
+  const tapText = document.getElementById("tapText");
+
   tapText.addEventListener('click', () => {
     screen3.style.display = "none";
     gameUI.style.display = "block";
@@ -328,7 +281,6 @@ startBtn.addEventListener("click", () => {
 const screen3 = document.getElementById('screen3');
 const soundBtn = document.getElementById('soundBtn');
 const targetBtn = document.getElementById('targetBtn');
-const wavingPlayer = document.getElementById('wavingPlayer');
 const coinDisplay = document.getElementById('coinDisplay');
 const resetCoin = document.getElementById('resetCoin');
 
@@ -354,7 +306,9 @@ targetBtn.addEventListener('click', () => {
   alert("Today's target: " + targets[Math.floor(Math.random() * targets.length)]);
 });
 
-// Show waving player after 5s
+//waving player animation
+const wavingPlayer = document.getElementById('wavingPlayer');
+
 setTimeout(() => {
   wavingPlayer.classList.add('wave');
 }, 5000);
@@ -375,9 +329,11 @@ resetCoin.addEventListener('click', () => {
     canvas.height = 400;
 
     const gameOverScreen = document.getElementById("gameOver");
-    // --- Player Image ---
-    const playerImg = new Image();
-    playerImg.src = "/mnt/data/Black and White Modern Personal Brand Logo.png";
+
+    // --- Preload PNG (transparent background) ---
+const playerImg = new Image();
+playerImg.src = "Black_and_White_Modern_Personal_Brand_Logo-removebg-preview.png";
+
 
     // Game variables
     let speed = 5;
@@ -521,10 +477,27 @@ resetCoin.addEventListener('click', () => {
 }
 
     function gameLoop() {
+      // --- Shadow under player (must be drawn BEFORE the PNG) ---
+let groundY = canvas.height - 15;
+let shadowWidth = 30 + (player.y - (canvas.height - 150)) * -0.3;
+
+ctx.beginPath();
+ctx.ellipse(
+  player.x + player.width / 2,
+  groundY,
+  shadowWidth,
+  10,
+  0,
+  0,
+  Math.PI * 2
+);
+ctx.fillStyle = "rgba(0,0,0,0.6)";
+ctx.fill();
+
       if (!gameRunning) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+      
       // Sky
       ctx.fillStyle = "#87CEEB";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -569,26 +542,6 @@ if (player.y >= canvas.height - 150) {
 const bounceHeight = 5; // how much the player bounces
 const bounceSpeed = 0.005; // speed of bounce
 const bodyBounce = Math.sin(Date.now() * bounceSpeed) * bounceHeight;
-
-// --- Draw shadow ---
-const shadowScale = 1 - (canvas.height - 150 - player.y - bodyBounce) / 200;
-ctx.save();
-ctx.translate(player.x + player.width/2, canvas.height - 20);
-ctx.scale(shadowScale, 1);
-ctx.beginPath();
-ctx.ellipse(0, 0, player.width/2, 10, 0, 0, Math.PI*2);
-ctx.fillStyle = "rgba(0,0,0,0.4)";
-ctx.fill();
-ctx.restore();
-
-// --- Draw player as PNG image ---
-ctx.drawImage(
-  playerImg,
-  player.x,
-  player.y + bodyBounce,
-  player.width,
-  player.height
-);
 
 // Running legs
 const legSwing = Math.abs((Date.now() / 80) % 20 - 10);
